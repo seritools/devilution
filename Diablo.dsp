@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 DiabloUI/WinRel/DiabloUI.lib 3rdParty/Storm/Source/WinRel/Storm.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib version.lib /nologo /subsystem:windows /machine:I386
+# ADD LINK32 DiabloUI/WinRel/DiabloUI.lib 3rdParty/Storm/Source/WinRel/Storm.lib xinput.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib version.lib /nologo /subsystem:windows /machine:I386
 
 !ELSEIF  "$(CFG)" == "Diablo - Win32 Debug"
 
@@ -79,8 +79,7 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib user32.lib gdi32.lib advapi32.lib shell32.lib version.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib version.lib /nologo /subsystem:windows /machine:I386
- /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 xinput.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib version.lib /nologo /subsystem:windows /machine:I386
 
 !ELSEIF  "$(CFG)" == "Diablo - Win32 Release with PDB"
 
@@ -108,7 +107,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 DiabloUI/WinRel/DiabloUI.lib 3rdParty/Storm/Source/WinRel/Storm.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib version.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 DiabloUI/WinRel/DiabloUI.lib 3rdParty/Storm/Source/WinRel/Storm.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib version.lib /nologo /subsystem:windows /debug /machine:I386
+# ADD LINK32 DiabloUI/WinRel/DiabloUI.lib 3rdParty/Storm/Source/WinRel/Storm.lib xinput.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib version.lib /nologo /subsystem:windows /debug /machine:I386
 
 !ENDIF
 

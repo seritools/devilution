@@ -16,7 +16,7 @@ endif
 #     (NEW_TYPE)(ptr)
 CXXFLAGS=-fpermissive -Wno-write-strings
 CPPFLAGS=-MMD -MF $*.d
-LDLIBS=-lgdi32 -lversion -ldiabloui -lstorm
+LDLIBS=-lgdi32 -lversion -lxinput -ldiabloui -lstorm
 LDFLAGS=-L./ -static-libgcc -mwindows
 
 all: devilution.exe

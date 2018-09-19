@@ -2,6 +2,8 @@
 
 #include "../types.h"
 
+#include <xinput.h>
+
 int diablo_cpp_init_value; // weak
 HWND ghMainWnd;
 int glMid1Seed[NUMLEVELS];
@@ -278,6 +280,108 @@ bool __cdecl diablo_get_not_running()
 	return GetLastError() != ERROR_ALREADY_EXISTS;
 }
 
+static unsigned int __stdcall xinput_func(void *arg)
+{
+	BOOL *bXinput = (BOOL*)arg;
+	WORD old_buttons = 0;
+
+	while (1)
+	{
+		DWORD dwDelay = 1000;
+		XINPUT_STATE state;
+		if (XInputGetState(0, &state) == ERROR_SUCCESS)
+		{
+			LONG x, y;
+			POINT p;
+
+			GetCursorPos(&p);
+			x = state.Gamepad.sThumbLX;
+			y = state.Gamepad.sThumbLY;
+			if (x < 0)
+				x += 4096;
+			else
+				x -= 4095;
+			if (y < 0)
+				y += 4096;
+			else
+				y -= 4095;
+			x /= 4096;
+			y /= 4096;
+
+			if (x || y)
+			{
+				SetCursorPos(p.x+x, p.y-y);
+				GetCursorPos(&p);
+			}
+
+			if (state.Gamepad.wButtons != old_buttons)
+			{
+				HWND child, hwnd;
+				LPARAM lParam;
+				WPARAM wParam = 0;
+
+				WORD b = state.Gamepad.wButtons;
+				WORD c = b ^ old_buttons;
+
+				hwnd = NULL;
+				child = GetForegroundWindow();
+				do
+				{
+					MapWindowPoints(hwnd, child, &p, 1);
+					hwnd = child;
+					child = ChildWindowFromPointEx(hwnd, p, CWP_SKIPDISABLED);
+				} while (child != hwnd);
+
+				lParam = (p.y << 16)  | (p.x & 0x0000FFFF);
+				if (b & XINPUT_GAMEPAD_A)
+					wParam |= MK_LBUTTON;
+				if (b & XINPUT_GAMEPAD_B)
+					wParam |= MK_RBUTTON;
+
+				if (c & XINPUT_GAMEPAD_A)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_A ? WM_LBUTTONDOWN:WM_LBUTTONUP, wParam, lParam);
+				if (c & XINPUT_GAMEPAD_B)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_B ? WM_RBUTTONDOWN:WM_RBUTTONUP, wParam, lParam);
+
+				if (c & XINPUT_GAMEPAD_DPAD_UP)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_DPAD_UP ? WM_KEYDOWN:WM_KEYUP, VK_UP, 0);
+				if (c & XINPUT_GAMEPAD_DPAD_DOWN)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_DPAD_DOWN ? WM_KEYDOWN:WM_KEYUP, VK_DOWN, 0);
+				if (c & XINPUT_GAMEPAD_DPAD_LEFT)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_DPAD_LEFT ? WM_KEYDOWN:WM_KEYUP, VK_LEFT, 0);
+				if (c & XINPUT_GAMEPAD_DPAD_RIGHT)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_DPAD_RIGHT ? WM_KEYDOWN:WM_KEYUP, VK_RIGHT, 0);
+				if (c & XINPUT_GAMEPAD_START)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_START ? WM_KEYDOWN:WM_KEYUP, VK_ESCAPE, 0);
+				if (c & XINPUT_GAMEPAD_BACK)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_BACK ? WM_KEYDOWN:WM_KEYUP, VK_TAB, 0);
+				if (c & XINPUT_GAMEPAD_RIGHT_THUMB)
+					PostMessage(hwnd, b & XINPUT_GAMEPAD_RIGHT_THUMB ? WM_KEYDOWN:WM_KEYUP, VK_RETURN, 0);
+
+				c &= b;
+				if (c & XINPUT_GAMEPAD_LEFT_SHOULDER)
+					PostMessage(hwnd, WM_CHAR, 'C', 0);
+				if (c & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+					PostMessage(hwnd, WM_CHAR, 'I', 0);
+				if (c & XINPUT_GAMEPAD_X)
+					PostMessage(hwnd, WM_CHAR, 'Q', 0);
+				if (c & XINPUT_GAMEPAD_Y)
+					PostMessage(hwnd, WM_CHAR, 'B', 0);
+
+				old_buttons = state.Gamepad.wButtons;
+			}
+
+			dwDelay = 10;
+		}
+
+		if (!*bXinput)
+			break;
+		Sleep(dwDelay);
+	}
+	
+	return 0;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	HINSTANCE v4; // esi
@@ -307,6 +411,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		diablo_parse_flags(lpCmdLine);
 		init_create_window(nCmdShow);
 		sound_init();
+		BOOL bXinput = TRUE;
+		HANDLE xthread = (HANDLE)_beginthreadex(NULL, 0, xinput_func, &bXinput, 0, NULL);
 		UiInitialize();
 #ifdef _DEBUG
 		if ( showintrodebug )
@@ -331,6 +437,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		BlackPalette();
 #endif
 		mainmenu_loop();
+		if (xthread)
+		{
+			bXinput = FALSE;
+			WaitForSingleObject(xthread, 2000);
+			CloseHandle(xthread);
+		}
 		UiDestroy();
 		SaveGamma();
 		if ( ghMainWnd )
@@ -672,7 +784,7 @@ LRESULT __stdcall DisableInputWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			  && (uMsg <= WM_CHAR
 			   || uMsg == WM_SYSKEYDOWN
 			   || uMsg == WM_SYSCOMMAND
-			   || uMsg == WM_MOUSEFIRST) )
+			   || uMsg == WM_MOUSEMOVE) )
 			{
 				return 0;
 			}
@@ -803,7 +915,7 @@ LRESULT __stdcall GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				track_repeat_walk(LeftMouseDown(wParam));
 			}
 			return 0;
-		case WM_KEYFIRST:
+		case WM_KEYDOWN:
 			PressKey(wParam);
 			return 0;
 		case WM_KEYUP:
@@ -825,7 +937,7 @@ LRESULT __stdcall GM_Game(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 			return MainWndProc(hWnd, uMsg, wParam, lParam);
 	}
-	if ( uMsg != WM_MOUSEFIRST )
+	if ( uMsg != WM_MOUSEMOVE )
 		return MainWndProc(hWnd, uMsg, wParam, lParam);
 	MouseX = (unsigned short)lParam;
 	MouseY = (unsigned int)lParam >> 16;
