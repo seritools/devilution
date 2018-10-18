@@ -76,6 +76,11 @@ void __fastcall dx_init(HWND hWnd)
 	v3 = dx_DirectDrawCreate(v2, &lpDDInterface, NULL);
 	if ( v3 )
 		ErrDlg(IDD_DIALOG1, v3, "C:\\Src\\Diablo\\Source\\dx.cpp", 149);
+	else {
+		// lpDDInterface->lpLcl->dwAppHackFlags |= 0x800
+		DWORD **hack = (DWORD**)lpDDInterface;
+		hack[1][18] |= 0x800;
+	}
 	fullscreen = 1;
 	v4 = lpDDInterface->SetCooperativeLevel(v1, DDSCL_EXCLUSIVE|DDSCL_ALLOWREBOOT|DDSCL_FULLSCREEN);
 	if ( v4 == DDERR_EXCLUSIVEMODEALREADYSET )
